@@ -98,7 +98,7 @@ object behaviors {
     //        }
     //      }
     //    }
-    
+
     case Struct(fields @ _*) => {
       Try(Ins(HashMap(fields.map { case (k, v) => (k, evaluate(m)(v).get) }: _*)))
 

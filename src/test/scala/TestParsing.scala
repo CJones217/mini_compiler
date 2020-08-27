@@ -4,8 +4,6 @@ import edu.luc.cs.laufer.cs473.expressions.{CombinatorParser, behaviors, _}
 
 import scala.collection.mutable.HashMap
 
-
-
 class TestParsing extends FlatSpec {
 
   "A parser" should "evaluate a List" in {
@@ -65,7 +63,7 @@ class TestParsing extends FlatSpec {
   "A Parser" should "not evaluate expressions without a semicolon" in {
     var result = CombinatorParser.parseAll(CombinatorParser.topLevel, "4")
     val store = HashMap.empty[String, Value]
-    assertThrows[java.lang.RuntimeException]{
+    assertThrows[java.lang.RuntimeException] {
       behaviors.evaluate(store)(result.get)
     }
   }
