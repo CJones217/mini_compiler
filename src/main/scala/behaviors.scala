@@ -11,21 +11,22 @@ object behaviors {
   sealed trait Value
   case class Num(value: Int) extends Value
   type Result = Try[Value]
+  type Cycle = Int
 
-  def cycloComplex(c: Int)(e: Expr): Int = e match { //TODO for research
-    case Constant(c)      => c
-    case UMinus(r)        => c
-    case Plus(l, r)       => c
-    case Minus(l, r)      => c
-    case Times(l, r)      => c
-    case Div(l, r)        => c
-    case Mod(l, r)        => c
-    case Var(v)           => c
-    case Loop(l, r)       => {
-      while (cycloComplex(c)(l) != Success(Num(0))) {
+  /*def cycloComplex(c: Int)(e: Expr): Int = e match { //TODO for research
+    case Constant(c) => c
+    case UMinus(r)   => c
+    case Plus(l, r)  => c
+    case Minus(l, r) => c
+    case Times(l, r) => c
+    case Div(l, r)   => c
+    case Mod(l, r)   => c
+    case Var(v)      => c
+    case Loop(l, r) => {
+      while (cycloComplex(c)(l) != 0) {
         cycloComplex(c)(r)
       }
-      cycloComplex(c+1)(l)
+      cycloComplex(c + 1)(l)
     }
     case Assignment(l, r) => c
     case Block(s @ _*) => { //work on doing cyclo inside the block
@@ -34,18 +35,31 @@ object behaviors {
         cycloComplex(c)(i.next())
       }
     }
-    case Conditional(e, l, r) => 1 //work on counting cyclo of if and other elifs or else
-
+    case Conditional(e, l, r) => {
+      val ans = cycloComplex(c)(e)
+      ans match {
+        case Failure(thrown) => {
+          ans
+        }
+        case Success(Num(0)) => {
+          cycloComplex(c + 1)(r)
+        }
+        case s => {
+          cycloComplex(c + 1)(l)
+        }
+      }
+    }
   }
-
-  def evaluate(m: Store)(e: Expr): Result = e match { //TODO for 3b
+*/
+  //TODO remove q and cyclo from evaluate as this isnt how to do it. It won't account for both if and else. Go back to above
+  def evaluate(q: Cycle)(m: Store)(e: Expr): Result = e match { //TODO for 3b
     case Constant(c) => Success(Num(c))
-    case UMinus(r)   => evalUnary(m)(r, "-")
-    case Plus(l, r)  => evalSigns(m)(l, "+", r)
-    case Minus(l, r) => evalSigns(m)(l, "-", r)
-    case Times(l, r) => evalSigns(m)(l, "*", r)
-    case Div(l, r)   => evalSigns(m)(l, "/", r)
-    case Mod(l, r)   => evalSigns(m)(l, "%", r)
+    case UMinus(r)   => evalUnary(q)(m)(r, "-")
+    case Plus(l, r)  => evalSigns(q)(m)(l, "+", r)
+    case Minus(l, r) => evalSigns(q)(m)(l, "-", r)
+    case Times(l, r) => evalSigns(q)(m)(l, "*", r)
+    case Div(l, r)   => evalSigns(q)(m)(l, "/", r)
+    case Mod(l, r)   => evalSigns(q)(m)(l, "%", r)
     case Var(v) => {
       if (m.contains(v)) {
         Success(m(v))
@@ -53,16 +67,16 @@ object behaviors {
         Failure(new NoSuchFieldException(v))
       }
     }
-    case Loop(l, r) => {
-      while (evaluate(m)(l) != Success(Num(0))) {
-        evaluate(m)(r)
+    case Loop(l, r) => { //might need to add to cyclo with loop?
+      while (evaluate(q)(m)(l) != Success(Num(0))) {
+        evaluate(q)(m)(r)
       }
-      evaluate(m)(l)
+      evaluate(q)(m)(l)
     }
     case Assignment(l, r) => {
       val valueL = l.toString.substring(l.toString.indexOf("(") + 1, l.toString.indexOf(")"))
       val valueRstr = r.toString.substring(r.toString.indexOf("(") + 1, r.toString.indexOf(")"))
-      val valueR = evaluate(m)(r)
+      val valueR = evaluate(q)(m)(r)
       valueR match {
         case Failure(thrown) => {
           Failure(new NoSuchFieldException(valueRstr))
@@ -82,7 +96,7 @@ object behaviors {
       val i = s.iterator
       var result: Value = null
       while (i.hasNext) {
-        evaluate(m)(i.next()) match {
+        evaluate(q)(m)(i.next()) match {
           case Success(r)     => result = r
           case f @ Failure(_) => return f
         }
@@ -90,34 +104,34 @@ object behaviors {
       Success(result)
     }
     case Conditional(e, l, r) => {
-      val ans = evaluate(m)(e)
+      val ans = evaluate(q)(m)(e)
       ans match {
         case Failure(thrown) => {
           ans
         }
         case Success(Num(0)) => {
-          evaluate(m)(r)
+          evaluate(q + 1)(m)(r)
         }
         case s => {
-          evaluate(m)(l)
+          evaluate(q + 1)(m)(l)
         }
       }
     }
   }
-  def evalUnary(m: Store)(v: Expr, sign: String): Result = {
-    val v1 = evaluate(m)(v)
+  def evalUnary(q: Int)(m: Store)(v: Expr, sign: String): Result = {
+    val v1 = evaluate(q)(m)(v)
     v1 match {
-      case Success(Num(v1)) => Success(Num(evalUnarySign(m)(v1, sign)))
+      case Success(Num(v1)) => Success(Num(evalUnarySign(q)(m)(v1, sign)))
       case _                => Failure(new RuntimeException("That didn't work"))
     }
   }
-  def evalUnarySign(m: Store)(v1: Int, sign: String): Int = sign match {
+  def evalUnarySign(q: Int)(m: Store)(v1: Int, sign: String): Int = sign match {
     case "-" => -v1
     case _   => v1
   }
-  def evalSigns(m: Store)(l: Expr, sign: String, r: Expr): Result = {
-    val v1 = evaluate(m)(l)
-    val v2 = evaluate(m)(r)
+  def evalSigns(q: Int)(m: Store)(l: Expr, sign: String, r: Expr): Result = {
+    val v1 = evaluate(q)(m)(l)
+    val v2 = evaluate(q)(m)(r)
     (v1, v2) match {
       case (Success(Num(v1)), Success(Num(v2))) => Success(Num(signs(v1, sign, v2)))
       case _                                    => Failure(new RuntimeException("That didn't work"))
