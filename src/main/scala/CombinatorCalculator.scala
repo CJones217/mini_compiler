@@ -26,7 +26,7 @@ object CombinatorCalculator extends App {
       println(toFormattedString(expr))
       println("The pretty form is:")
       println(toPrettyFormatABC(expr))
-      println("It evaluates to " + evaluate(cyclo)(store)(expr))
+      println("It evaluates to " + evaluate(store)(expr))
       println(store)
       println("cyclomatic complexity please work: " + cyclo)
     }
