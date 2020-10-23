@@ -13,33 +13,31 @@ object behaviors {
   case class Ins(instance: HashMap[String, Value]) extends Value
   //type Value = Either[Int, Instance]
   type Result = Try[Value]
+  type Cycle = Int
 
-  def cycloComplex(c: Int)(e: Expr): Int = e match { //TODO for research
-    case Constant(c)      => c
-    case UMinus(r)        => c
-    case Plus(l, r)       => c
-    case Minus(l, r)      => c
-    case Times(l, r)      => c
-    case Div(l, r)        => c
-    case Mod(l, r)        => c
-    case Var(v)           => c
-    case Loop(l, r)       => {
-      while (cycloComplex(c)(l) != Success(Num(0))) {
-        cycloComplex(c)(r)
-      }
-      cycloComplex(c+1)(l)
+  def cycloComplex(c: Cycle)(e: Expr): Int = e match { //TODO for research
+    case Constant(n) => c
+    case UMinus(r)   => c
+    case Plus(l, r)  => c
+    case Minus(l, r) => c
+    case Times(l, r) => c
+    case Div(l, r)   => c
+    case Mod(l, r)   => c
+    case Var(v)      => c
+    case Loop(l, r) => {
+      cycloComplex(c + 1)(r)
     }
     case Assignment(l, r) => c
     case Block(s @ _*) => { //work on doing cyclo inside the block
-      val i = s.iterator
-      while (i.hasNext) {
-        cycloComplex(c)(i.next())
-      }
+      s.map(n => cycloComplex(c)(n)).sum
     }
-    case Conditional(e, l, r) => 1 //work on counting cyclo of if and other elifs or else
-
+    case Conditional(e, l, r) => {
+      cycloComplex(c + 1)(l)
+      cycloComplex(c + 1)(r)
+    }
   }
 
+  //TODO remove q and cyclo from evaluate as this isnt how to do it. It won't account for both if and else. Go back to above
   def evaluate(m: Store)(e: Expr): Result = e match { //TODO for 3b
     case Constant(c) => Success(Num(c))
     case UMinus(r)   => evalUnary(m)(r, "-")
@@ -55,7 +53,7 @@ object behaviors {
         Failure(new NoSuchFieldException(v))
       }
     }
-    case Loop(l, r) => {
+    case Loop(l, r) => { //might need to add to cyclo with loop?
       while (evaluate(m)(l) != Success(Num(0))) {
         evaluate(m)(r)
       }

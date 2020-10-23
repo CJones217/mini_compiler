@@ -11,6 +11,7 @@ object CombinatorCalculator extends App {
   val reader = LineReaderBuilder.builder.terminal(terminal).build
   val prompt = ">> Enter infix expression: "
   val store = HashMap.empty[String, Value]
+  val cyclo = 0;
 
   def processExpr(input: String): Unit = {
 
@@ -27,6 +28,7 @@ object CombinatorCalculator extends App {
       println(toPrettyFormatABC(expr))
       println("It evaluates to " + evaluate(store)(expr))
       println(store)
+      println("cyclomatic complexity please work: " + cycloComplex(cyclo)(expr))
     }
   }
 
