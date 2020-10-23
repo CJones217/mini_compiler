@@ -13,7 +13,7 @@ object behaviors {
   type Result = Try[Value]
   type Cycle = Int
 
-  def cycloComplex(c: Int)(e: Expr): Int = e match { //TODO for research
+  def cycloComplex(c: Cycle)(e: Expr): Int = e match { //TODO for research
     case Constant(n) => c
     case UMinus(r)   => c
     case Plus(l, r)  => c
@@ -27,10 +27,7 @@ object behaviors {
     }
     case Assignment(l, r) => c
     case Block(s @ _*) => { //work on doing cyclo inside the block
-      val i = s.iterator
-      while (i.hasNext) {
-        cycloComplex(c)(i.next())
-      }
+      s.map(n => cycloComplex(c)(n)).sum
     }
     case Conditional(e, l, r) => {
       cycloComplex(c + 1)(l)
