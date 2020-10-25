@@ -13,25 +13,26 @@ object behaviors {
   type Result = Try[Value]
   type Cycle = Int
 
-  def cycloComplex(c: Cycle)(e: Expr): Int = e match { //TODO for research
-    case Constant(n) => c
-    case UMinus(r)   => c
-    case Plus(l, r)  => c
-    case Minus(l, r) => c
-    case Times(l, r) => c
-    case Div(l, r)   => c
-    case Mod(l, r)   => c
-    case Var(v)      => c
+  def cycloComplex(e: Expr): Int = e match { //TODO for research
+    case Constant(n) => 0
+    case UMinus(r)   => 0
+    case Plus(l, r)  => 0
+    case Minus(l, r) => 0
+    case Times(l, r) => 0
+    case Div(l, r)   => 0
+    case Mod(l, r)   => 0
+    case Var(v)      => 0
     case Loop(l, r) => {
-      cycloComplex(c + 1)(r)
+      cycloComplex(r) + 1
     }
-    case Assignment(l, r) => c
+    case Assignment(l, r) => 0
     case Block(s @ _*) => { //work on doing cyclo inside the block
-      s.map(n => cycloComplex(c)(n)).sum
+      s.map(n => cycloComplex(n)).sum
     }
     case Conditional(e, l, r) => {
-      cycloComplex(c + 1)(l)
-      cycloComplex(c + 1)(r)
+      cycloComplex(l) + 2 + cycloComplex(r)
+      //combine these
+      //TODO find better way to do this, look into nesting and all that
     }
   }
 
