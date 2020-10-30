@@ -23,7 +23,7 @@ object behaviors {
     case Mod(l, r)   => 0
     case Var(v)      => 0
     case Loop(l, r) => {
-      cycloComplex(r) + 1
+      cycloComplex(r) + 2
     }
     case Assignment(l, r) => 0
     case Block(s @ _*) => { //work on doing cyclo inside the block
